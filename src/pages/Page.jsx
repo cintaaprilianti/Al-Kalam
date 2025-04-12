@@ -49,7 +49,7 @@ function Page() {
 
       try {
         setLoading(true);
-        const res = await fetchWithRetry(`http://api.alquran.cloud/v1/page/${pageId}/quran-uthmani`);
+        const res = await fetchWithRetry(`https://api.alquran.cloud/v1/page/${pageId}/quran-uthmani`);
         if (!res.data?.ayahs) throw new Error('Data halaman tidak valid');
 
         const pageAyahs = res.data.ayahs;
@@ -200,7 +200,7 @@ function Page() {
             onClick={() => navigate('/page')}
             className="px-6 py-3 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-lg"
           >
-            Kembali ke Daftar Halaman
+            Kembali ke Page
           </button>
         </div>
       </div>
@@ -233,7 +233,7 @@ function Page() {
                   d="M10 19l-7-7m0 0l7-7m-7 7h18"
                 />
               </svg>
-              Kembali ke Daftar Halaman
+              Kembali ke Page
             </button>
           </div>
           <div className="flex flex-col items-center">

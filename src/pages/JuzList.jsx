@@ -26,7 +26,7 @@ function JuzList() {
       try {
         const juzPromises = [];
         for (let i = 1; i <= 30; i++) {
-          juzPromises.push(fetchWithRetry(`http://api.alquran.cloud/v1/juz/${i}/quran-uthmani`));
+          juzPromises.push(fetchWithRetry(`https://api.alquran.cloud/v1/juz/${i}/quran-uthmani`));
         }
 
         const juzData = await Promise.all(juzPromises);

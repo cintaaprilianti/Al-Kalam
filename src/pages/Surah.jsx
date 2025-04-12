@@ -29,7 +29,7 @@ function Surah() {
     const fetchSurah = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`http://api.alquran.cloud/v1/surah/${id}/quran-uthmani`);
+        const res = await fetch(`https://api.alquran.cloud/v1/surah/${id}/quran-uthmani`);
         if (!res.ok) throw new Error('Gagal mengambil data surah');
 
         const data = await res.json();

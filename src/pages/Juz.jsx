@@ -49,7 +49,7 @@ function Juz() {
 
       try {
         setLoading(true);
-        const res = await fetchWithRetry(`http://api.alquran.cloud/v1/juz/${juzId}/quran-uthmani`);
+        const res = await fetchWithRetry(`https://api.alquran.cloud/v1/juz/${juzId}/quran-uthmani`);
         if (!res.data?.ayahs) throw new Error('Data Juz tidak valid');
 
         const juzAyahs = res.data.ayahs;

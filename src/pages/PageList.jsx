@@ -34,7 +34,7 @@ function PageList() {
           const end = Math.min(start + batchSize - 1, totalPages);
           const pagePromises = [];
           for (let i = start; i <= end; i++) {
-            pagePromises.push(fetchWithRetry(`http://api.alquran.cloud/v1/page/${i}/quran-uthmani`));
+            pagePromises.push(fetchWithRetry(`https://api.alquran.cloud/v1/page/${i}/quran-uthmani`));
           }
 
           const batchData = await Promise.all(pagePromises);

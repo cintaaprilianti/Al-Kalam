@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { FaGithub, FaInstagram } from 'react-icons/fa';
+import { FaGithub, FaInstagram, FaArrowLeft, FaArrowRight } from 'react-icons/fa';
 import { MdEmail } from 'react-icons/md';
 
 function Home() {
@@ -11,6 +11,9 @@ function Home() {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [totalPages, setTotalPages] = useState(604); 
+  const pagesPerView = 12; 
 
   const fetchWithRetry = async (url, retries = 3) => {
     for (let i = 0; i < retries; i++) {
@@ -30,7 +33,7 @@ function Home() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        const surahData = await fetchWithRetry('http://api.alquran.cloud/v1/surah');
+        const surahData = await fetchWithRetry('https://api.alquran.cloud/v1/surah');
         const surahList = surahData.data.map((s) => ({
           nomor: s.number,
           nama: s.name,
@@ -43,7 +46,7 @@ function Home() {
 
         const juzPromises = [];
         for (let i = 1; i <= 30; i++) {
-          juzPromises.push(fetchWithRetry(`http://api.alquran.cloud/v1/juz/${i}/quran-uthmani`));
+          juzPromises.push(fetchWithRetry(`https://api.alquran.cloud/v1/juz/${i}/quran-uthmani`));
         }
         const juzData = await Promise.all(juzPromises);
         const juzList = juzData.map((data, index) => {
@@ -61,25 +64,7 @@ function Home() {
         }).filter((j) => j !== null);
         setJuz(juzList);
 
-        const pagePromises = [];
-        for (let i = 1; i <= 12; i++) {
-          pagePromises.push(fetchWithRetry(`http://api.alquran.cloud/v1/page/${i}/quran-uthmani`));
-        }
-        const pageData = await Promise.all(pagePromises);
-        const pageList = pageData.map((data, index) => {
-          if (!data.data?.ayahs) {
-            console.error(`Invalid Page ${index + 1} data:`, data);
-            return null;
-          }
-          return {
-            number: index + 1,
-            ayahs: data.data.ayahs,
-            surahName: data.data.ayahs[0]?.surah?.englishName || 'Unknown',
-            surahArabic: data.data.ayahs[0]?.surah?.name || 'غير معروف',
-            ayahNumber: data.data.ayahs[0]?.numberInSurah || 1,
-          };
-        }).filter((p) => p !== null);
-        setPages(pageList);
+        await fetchPages(currentPageIndex, pagesPerView);
 
         setLoading(false);
       } catch (err) {
@@ -91,6 +76,58 @@ function Home() {
 
     fetchData();
   }, []);
+
+  const fetchPages = async (startIndex, count) => {
+    setLoading(true);
+    try {
+      const startPage = startIndex * count + 1;
+      const endPage = Math.min(startPage + count - 1, totalPages);
+      
+      const pagePromises = [];
+      for (let i = startPage; i <= endPage; i++) {
+        pagePromises.push(fetchWithRetry(`https://api.alquran.cloud/v1/page/${i}/quran-uthmani`));
+      }
+      
+      const pageData = await Promise.all(pagePromises);
+      const pageList = pageData.map((data, index) => {
+        if (!data.data?.ayahs) {
+          console.error(`Invalid Page ${startPage + index} data:`, data);
+          return null;
+        }
+        return {
+          number: startPage + index,
+          ayahs: data.data.ayahs,
+          surahName: data.data.ayahs[0]?.surah?.englishName || 'Unknown',
+          surahArabic: data.data.ayahs[0]?.surah?.name || 'غير معروف',
+          ayahNumber: data.data.ayahs[0]?.numberInSurah || 1,
+        };
+      }).filter((p) => p !== null);
+      
+      setPages(pageList);
+      setLoading(false);
+    } catch (err) {
+      console.error('Fetch pages error:', err);
+      setError(`Gagal memuat halaman: ${err.message}`);
+      setLoading(false);
+    }
+  };
+
+  const handlePrevPages = () => {
+    if (currentPageIndex > 0) {
+      const newIndex = currentPageIndex - 1;
+      setCurrentPageIndex(newIndex);
+      fetchPages(newIndex, pagesPerView);
+    }
+  };
+
+  const handleNextPages = () => {
+    const maxIndex = Math.ceil(totalPages / pagesPerView) - 1;
+    if (currentPageIndex < maxIndex) {
+      const newIndex = currentPageIndex + 1;
+      setCurrentPageIndex(newIndex);
+      fetchPages(newIndex, pagesPerView);
+    }
+  };
 
   const filteredSurahs = surahs.filter(
     (s) =>
@@ -248,13 +285,37 @@ function Home() {
                     <p className="text-center text-gray-400 col-span-3">Tidak ada halaman yang ditemukan.</p>
                   )}
                 </ul>
-                <div className="text-center mt-8">
-                  <Link
-                    to="/page"
-                    className="inline-block px-6 py-3 bg-gradient-to-r from-gray-700 to-gray-600 text-white rounded-full hover:from-gray-600 hover:to-gray-500 transition-all shadow-lg font-medium"
+
+                <div className="flex justify-center space-x-4 mt-8">
+                  <button
+                    onClick={handlePrevPages}
+                    disabled={currentPageIndex === 0}
+                    className={`flex items-center space-x-2 px-5 py-3 rounded-full ${
+                      currentPageIndex === 0
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-gray-700 to-gray-600 text-white hover:from-gray-600 hover:to-gray-500'
+                    } transition-all shadow-lg font-medium`}
                   >
-                    Lihat Semua Halaman
-                  </Link>
+                    <FaArrowLeft className="text-sm" />
+                    <span>Sebelumnya</span>
+                  </button>
+                  
+                  <div className="px-4 py-3 bg-gray-800 rounded-full text-gray-300">
+                    {currentPageIndex * pagesPerView + 1} - {Math.min((currentPageIndex + 1) * pagesPerView, totalPages)} dari {totalPages}
+                  </div>
+                  
+                  <button
+                    onClick={handleNextPages}
+                    disabled={currentPageIndex >= Math.ceil(totalPages / pagesPerView) - 1}
+                    className={`flex items-center space-x-2 px-5 py-3 rounded-full ${
+                      currentPageIndex >= Math.ceil(totalPages / pagesPerView) - 1
+                        ? 'bg-gray-800 text-gray-500 cursor-not-allowed'
+                        : 'bg-gradient-to-r from-gray-700 to-gray-600 text-white hover:from-gray-600 hover:to-gray-500'
+                    } transition-all shadow-lg font-medium`}
+                  >
+                    <span>Selanjutnya</span>
+                    <FaArrowRight className="text-sm" />
+                  </button>
                 </div>
               </div>
             )}
